@@ -10,5 +10,5 @@ class TestMarkdownDataInjector:
     @pytest.mark.asyncio
     async def test_ingest_md_files(self, db_client):
         ingest_client = MarkdownDataInjector(db_client)
-        await ingest_client.ingest_md_files(config.docs_path)
+        await ingest_client.ingest_files()
         assert True

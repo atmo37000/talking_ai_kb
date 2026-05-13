@@ -2,21 +2,19 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from langchain_community.document_loaders import PDFPlumberLoader
 from qdrant_client.http.models import PointStruct
 
 from data_injector.data_injector import DataInjector
 from db_client.db_client import DbClient
 from utils.config import config
-from langchain_core.document_loaders import BaseLoader
-from langchain_core.documents import Document
-from langchain_community.document_loaders import PDFPlumberLoader
 
 
 class PdfDataInjector(DataInjector):
     def __init__(self, db_client: DbClient):
         self.db_client = db_client
         self.base_path = Path(config.docs_path)
-        super().__init__()
+        super().__init__(db_client)
 
     def _get_pdf_files_paths(self) -> list[str]:
         if not os.path.exists(self.base_path):
@@ -42,7 +40,7 @@ class PdfDataInjector(DataInjector):
 
         return chunks
 
-    async def ingest_pdf_files(self, dir_name: str) -> None:
+    async def ingest_files(self) -> None:
         for doc_path in self._get_pdf_files_paths():
             lang_doc = self._load_file(doc_path)
             chunks = self._split_doc_to_chunks(lang_doc)

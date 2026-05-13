@@ -11,21 +11,11 @@ from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
 
-class MyCustomLoader(BaseLoader):
-    def __init__(self, file_path):
-        self.file_path = file_path
-    def load(self):
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            text = f.read()
-        metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
-
-
 class MarkdownDataInjector(DataInjector):
     def __init__(self, db_client: DbClient):
         self.db_client = db_client
         self.base_path = Path(config.docs_path)
-        super().__init__()
+        super().__init__(db_client)
 
     def _get_markdown_files_paths(self) -> list[str]:
         if not os.path.exists(self.base_path):
@@ -51,7 +41,7 @@ class MarkdownDataInjector(DataInjector):
 
         return chunks
 
-    async def ingest_md_files(self, dir_name: str) -> None:
+    async def ingest_files(self) -> None:
         for doc_path in self._get_markdown_files_paths():
             lang_doc = self._load_file(doc_path)
             chunks = self._split_doc_to_chunks(lang_doc)
@@ -61,3 +51,13 @@ class MarkdownDataInjector(DataInjector):
                 for i, (ch, emb) in enumerate(zip(chunks, embeddings))
             ]
             await self.db_client.upsert(config.qdrant.collection_name, points)
+
+
+class MyCustomLoader(BaseLoader):
+    def __init__(self, file_path):
+        self.file_path = file_path
+    def load(self):
+        with open(self.file_path, "r", encoding="utf-8") as f:
+            text = f.read()
+        metadata = {"source": self.file_path}
+        return [Document(page_content=text, metadata=metadata)]

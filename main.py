@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
             vector_size=384,
             distance=Distance.COSINE
         )
-        await MarkdownDataInjector(db_client).ingest_md_files(config.docs_dir)
+        await MarkdownDataInjector(db_client).ingest_files()
 
     yield
 
