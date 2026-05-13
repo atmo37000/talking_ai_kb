@@ -9,7 +9,7 @@ from data_injector.markdown_data_injector import MarkdownDataInjector
 from handlers.question_handler import QuestionHandler
 from retriever.simple_retriever import SimpleRetriever
 from utils.clients_fabric import ClientsFabric
-from utils.config import config
+from config import config
 from utils.logger import get_logger
 
 clients = ClientsFabric().create_clients()

@@ -1,8 +1,5 @@
 import asyncio
 
-import pytest
-
-from utils.config import config
 from main import health
 
 

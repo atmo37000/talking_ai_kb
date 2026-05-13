@@ -6,7 +6,7 @@ from qdrant_client.http.models import PointStruct
 
 from data_injector.data_injector import DataInjector
 from db_client.db_client import DbClient
-from utils.config import config
+from config import config
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 

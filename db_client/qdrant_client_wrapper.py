@@ -2,7 +2,6 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.models import VectorParams
 
 from db_client.db_client import DbClient
-from utils.config import config
 from utils.logger import get_logger
 
 logger = get_logger()

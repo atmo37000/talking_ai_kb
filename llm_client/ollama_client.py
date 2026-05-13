@@ -1,7 +1,7 @@
 from llm_client.base_llm_client import BaseLLMClient
 from ollama import AsyncClient
 
-from utils.config import config
+from config import config
 
 
 class OllamaClient(BaseLLMClient):

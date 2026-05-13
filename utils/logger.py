@@ -1,5 +1,5 @@
 
-from utils.config import config
+from config import config
 
 
 def get_logger():

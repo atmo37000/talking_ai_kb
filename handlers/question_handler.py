@@ -6,7 +6,7 @@ from llm_client.base_llm_client import BaseLLMClient
 from prompt_builder.prompts import CONTEXT_PROMPT_CONTENT
 from prompt_builder.simple_prompt_builder import SimplePromptBuilder
 from retriever.base_retriever import BaseRetriever
-from utils.config import config
+from config import config
 
 
 class QuestionHandler(BaseHandler):

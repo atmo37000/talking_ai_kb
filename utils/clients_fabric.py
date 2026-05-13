@@ -1,6 +1,6 @@
 from db_client.qdrant_client_wrapper import QdrantClientWrapper
 from llm_client.ollama_client import OllamaClient
-from utils.config import config, LLMProvider, DbProvider
+from config import config, LLMProvider, DbProvider
 
 
 class ClientsFabric:
