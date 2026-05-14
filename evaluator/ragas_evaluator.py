@@ -1,7 +1,7 @@
 import asyncio
 
 from pydantic import BaseModel
-from ragas.dataset_schema import SingleTurnSample, EvaluationDataset
+from ragas.dataset_schema import SingleTurnSample
 from ragas.metrics.collections import Faithfulness, AnswerRelevancy, ContextRelevance
 
 from db_client.db_client import DbClient

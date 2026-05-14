@@ -3,18 +3,21 @@ from datetime import datetime
 from pathlib import Path
 
 from langchain_community.document_loaders import PDFPlumberLoader
-from qdrant_client.http.models import PointStruct
+from langchain_core.documents import Document
+from qdrant_client.http.models import PointStruct, SparseVector
 
+from chunker.base_chunker import BaseChunker
 from data_injector.data_injector import DataInjector
 from db_client.db_client import DbClient
 from config import config
 
 
 class PdfDataInjector(DataInjector):
-    def __init__(self, db_client: DbClient):
+    def __init__(self, db_client: DbClient, chunker: BaseChunker):
         self.db_client = db_client
+        self.chunker = chunker
         self.base_path = Path(config.docs_path)
-        super().__init__(db_client)
+        super().__init__(db_client, chunker)
 
     def _get_pdf_files_paths(self) -> list[str]:
         if not os.path.exists(self.base_path):
@@ -27,26 +30,30 @@ class PdfDataInjector(DataInjector):
 
         return file_paths
 
-    def _load_file(self, doc_path):
+    def _load_file(self, doc_path: str) -> Document:
         loader = PDFPlumberLoader(doc_path)
         return loader.load()
 
-
-    def _split_doc_to_chunks(self, lang_doc):
-        from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-        chunks = splitter.split_text(lang_doc)
-
-        return chunks
-
     async def ingest_files(self) -> None:
         for doc_path in self._get_pdf_files_paths():
-            lang_doc = self._load_file(doc_path)
-            chunks = self._split_doc_to_chunks(lang_doc)
-            embeddings = [self.db_client.embedding_model.encode(ch.page_content) for ch in chunks]
-            points = [
-                PointStruct(id=i, vector=emb.tolist(), payload={'text': ch, 'doc_path': doc_path, 'updated_at': datetime.now()})
-                for i, (ch, emb) in enumerate(zip(chunks, embeddings))
-            ]
+            doc = self._load_file(doc_path)
+            chunks = self.chunker.split_to_chunks(doc)
+            points = []
+            for i, ch in enumerate(chunks):
+                dense_embedding = self.db_client.embedding_provider.get_dense_embedding(ch.page_content)
+                sparse_embedding = self.db_client.embedding_provider.get_sparse_embedding(ch.page_content)
+                points.append(
+                    PointStruct(
+                        id=i,
+                        vector={
+                            "dense": dense_embedding.tolist(),
+                            "sparse": SparseVector(
+                                indices=sparse_embedding.indices.tolist(),
+                                values=sparse_embedding.values.tolist()
+                            )
+                        },
+                        payload={"text": ch}
+                    )
+                )
+
             await self.db_client.upsert(config.qdrant.collection_name, points)

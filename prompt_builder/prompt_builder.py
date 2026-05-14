@@ -2,10 +2,8 @@ from abc import ABC, abstractmethod
 
 
 class PromptBuilder(ABC):
-    def __init__(self, role: str, template: str, **kwargs):
-        self.role = role
-        self.template = template
-        self.template_vars = kwargs
+    def __init__(self, role: str, template: str, question: str, context: str):
+        pass
 
     @abstractmethod
     def build_prompt(self) -> dict:

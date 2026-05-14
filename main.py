@@ -5,6 +5,7 @@ from fastapi import FastAPI, Body
 from fastapi import HTTPException
 from qdrant_client.models import Distance
 
+from chunker.recursive_chunker import RecursiveChunker
 from data_injector.markdown_data_injector import MarkdownDataInjector
 from handlers.question_handler import QuestionHandler
 from retriever.simple_retriever import SimpleRetriever
@@ -24,11 +25,11 @@ logger = get_logger()
 async def lifespan(app: FastAPI):
     if not await db_client.collection_exists(config.collection_name):
         await db_client.create_collection(
-            name=config.collection_name,
+            collection_name=config.collection_name,
             vector_size=384,
             distance=Distance.COSINE
         )
-        await MarkdownDataInjector(db_client).ingest_files()
+        await MarkdownDataInjector(db_client, RecursiveChunker()).ingest_files()
 
     yield
 
@@ -39,7 +40,7 @@ async def lifespan(app: FastAPI):
 async def ask(question: str = Body(..., embed=True)):
     try:
         response = await QuestionHandler(
-            db_client, SimpleRetriever, llm_client
+            SimpleRetriever(db_client), llm_client
         ).process_question(question)
 
         return {'answer': response}
@@ -52,8 +53,8 @@ async def ask(question: str = Body(..., embed=True)):
 async def health():
     try:
         response = await QuestionHandler(
-            db_client, SimpleRetriever, llm_client
-        ).process_question('Что такое RAG?')
+            SimpleRetriever(db_client), llm_client
+        ).process_question('Дай определение понятию LLM')
 
         return {'answer': response}
     except Exception as e:

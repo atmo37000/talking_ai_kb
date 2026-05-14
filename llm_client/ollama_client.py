@@ -1,7 +1,7 @@
-from llm_client.base_llm_client import BaseLLMClient
 from ollama import AsyncClient
 
 from config import config
+from llm_client.base_llm_client import BaseLLMClient
 
 
 class OllamaClient(BaseLLMClient):
@@ -15,6 +15,9 @@ class OllamaClient(BaseLLMClient):
         res = await self.llm.chat(
             model=self.llm_model,
             messages=[prompt],
-            options={'temperature': temperature}
+            options={
+                'temperature': temperature,
+                'num_predict': 200
+            }
         )
         return res.message.content
