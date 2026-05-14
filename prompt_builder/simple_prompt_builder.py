@@ -4,14 +4,15 @@ from prompt_builder.prompt_builder import PromptBuilder
 
 
 class SimplePromptBuilder(PromptBuilder):
-    def __init__(self, role: str, template: str, **kwargs):
+    def __init__(self, role: str, template: str, question: str, context: str):
         self.role = role
         self.template = template
-        self.template_vars = kwargs
-        super().__init__(role, template, **kwargs)
+        self.context = context
+        self.question = question
+        super().__init__(role, template, question, context)
 
     def build_prompt(self) -> dict:
-        prompt_content = Template(self.template).render(**self.template_vars)
+        prompt_content = Template(self.template).render(context=self.context, question=self.question)
 
         if self.validate_prompt_content(prompt_content):
             return {
@@ -24,11 +25,11 @@ class SimplePromptBuilder(PromptBuilder):
 
     def validate_prompt_content(self, prompt_content: str) -> bool:
         DANGEROUS_INPUTS = (
-            "игнорируй",
-            "забудь",
-            "system prompt",
-            "выведи все",
-            "раскрой секрет"
+            # "игнорируй",
+            # "забудь",
+            # "system prompt",
+            # "выведи все",
+            # "раскрой секрет"
         )
 
         for p in DANGEROUS_INPUTS:

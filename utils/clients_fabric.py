@@ -1,4 +1,5 @@
 from db_client.qdrant_client_wrapper import QdrantClientWrapper
+from embedding_provider.fastembed_embeddings import FastEmbedEmbeddingProvider
 from llm_client.ollama_client import OllamaClient
 from config import config, LLMProvider, DbProvider
 
@@ -9,7 +10,7 @@ class ClientsFabric:
             return QdrantClientWrapper(
                 host=config.qdrant.host,
                 port=config.qdrant.port,
-                embedding_model_name=config.qdrant.embedding_model
+                embedding_provider=FastEmbedEmbeddingProvider()
             )
         else:
             raise ValueError(f'Db client {config.db_client} does not supported')
@@ -21,8 +22,6 @@ class ClientsFabric:
             )
         else:
             raise ValueError(f"LLM provider {config.provider} does not supported")
-
-
 
     def create_clients(self):
         return {

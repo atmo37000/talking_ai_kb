@@ -5,7 +5,7 @@ from db_client.db_client import DbClient
 
 class BaseRetriever(ABC):
     def __init__(self, db_client: DbClient):
-        self.db_client = db_client
+        pass
 
     @abstractmethod
     async def _apply_reranker(self):

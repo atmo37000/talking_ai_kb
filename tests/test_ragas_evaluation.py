@@ -2,7 +2,7 @@ import pytest
 from ragas import EvaluationDataset, SingleTurnSample
 
 from evaluator.ragas_evaluator import RagasEvaluator
-from tests.conftest import llm_instance
+from utils.clients_fabric import ClientsFabric
 
 
 class TestRagasEvaluation:
@@ -21,7 +21,9 @@ class TestRagasEvaluation:
             )
         ])
 
-    def test_run_eval(self, llm_instance, db_client, dataset):
+    def test_run_eval(self,dataset):
+        db_client = ClientsFabric().create_db_client()
+        llm = ClientsFabric().create_llm_client()
         # real unit tests will be added later
-        RagasEvaluator(llm_instance, db_client).start(dataset)
+        RagasEvaluator(llm, db_client).start(dataset)
         assert True

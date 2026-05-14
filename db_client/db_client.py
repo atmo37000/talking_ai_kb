@@ -1,15 +1,13 @@
 from abc import ABC, abstractmethod
 
+from embedding_provider.base_embedding_provider import BaseEmbeddingProvider
+
 
 class DbClient(ABC):
-    def __init__(self, host: str, port: int, embedding_model_name: str):
+    def __init__(self, host: str, port: int, embedding_provider: BaseEmbeddingProvider):
         self.host = host
         self.port = port
-        self.embedding_model = self._create_embedding_model_instance(embedding_model_name)
-
-    @abstractmethod
-    async def _create_embedding_model_instance(self, embedding_model_name):
-        pass
+        self.embedding_provider = embedding_provider
 
     @abstractmethod
     async def create_collection(self, name, vector_size, distance):
@@ -24,7 +22,7 @@ class DbClient(ABC):
         pass
 
     @abstractmethod
-    async def query(self, collection_name: str, query: list, limit: int) -> str:
+    async def query(self, collection_name: str, question: str, limit: int):
         pass
 
     @abstractmethod

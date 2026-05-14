@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import Literal
 
-from pydantic import Field, root_validator, model_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # noinspection PyTypeChecker
@@ -48,7 +48,6 @@ class PhiConfig(BaseSettings):
 class QdrantConfig(BaseSettings):
     host: str = Field(default='localhost')
     port: int = Field(default=6333)
-    embedding_model: str = Field(default='all-MiniLM-L6-v2')
     collection_name: str = Field(default='docs')
 
     # noinspection PyTypeChecker
@@ -59,32 +58,28 @@ class QdrantConfig(BaseSettings):
         extra='ignore'
     )
 
+class FastEmbedConfig(BaseSettings):
+    dense_model: str = Field(default='BAAI/bge-small-en-v1.5')
+    sparse_model: str = Field(default='Qdrant/bm42-all-minilm-l6-v2-attentions')
+
 
 class AppConfig(BaseSettings):
     """
     Главный конфиг, собирает все подконфиги
     """
-    provider: LLMProvider = Field(default=LLMProvider.PHI)
+    provider: LLMProvider = Field(default=LLMProvider.LLAMA)
     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'INFO'
     ollama_host: str = Field(default='http://localhost:11434')
     docs_path: str
     collection_name: str = Field(default='docs')
-    model: str = Field(default='phi3:mini')
+    model: str = Field(default='llama3.1')
     db_client: str = Field(default=DbProvider.QDRANT)
     elastic_host: str = Field(default="http://localhost:9200")
-
-
-    #
-    # @model_validator()
-    # def set_model(self, values):
-    #     if values.get("provider") == LLMProvider.LLAMA:
-    #         values["model"] = LlamaConfig.model
-    #
-    #     return values
 
     qdrant: QdrantConfig = Field(default_factory=QdrantConfig)
     llama: LlamaConfig = Field(default_factory=LlamaConfig)
     phi: PhiConfig = Field(default_factory=PhiConfig)
+    fastembed: FastEmbedConfig = Field(default_factory=FastEmbedConfig)
 
     # noinspection PyTypeChecker
     model_config = SettingsConfigDict(
