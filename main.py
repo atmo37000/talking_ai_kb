@@ -1,17 +1,21 @@
+import time
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, Body
-from fastapi import HTTPException
+from fastapi import Body
+from fastapi import FastAPI, HTTPException
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from qdrant_client.models import Distance
+from starlette.responses import PlainTextResponse
 
 from chunker.recursive_chunker import RecursiveChunker
+from config import config
 from data_injector.markdown_data_injector import MarkdownDataInjector
 from handlers.question_handler import QuestionHandler
 from retriever.simple_retriever import SimpleRetriever
 from utils.clients_fabric import ClientsFabric
-from config import config
 from utils.logger import get_logger
+from utils.middleware import registry, RAG_REQUESTS_TOTAL, RAG_REQUEST_DURATION_SECONDS
 
 clients = ClientsFabric().create_clients()
 db_client = clients['db_client']
@@ -65,7 +69,36 @@ async def health():
 async def root():
     return {'message': 'Hello world'}
 
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return PlainTextResponse(
+        generate_latest(registry),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    endpoint = request.url.path
+    route = request.scope.get("route")
+    if route is not None and getattr(route, "path", None):
+        endpoint = str(route.path)
+    method = request.method
+
+    try:
+        start_time = time.time()
+        response = await call_next(request)
+        status_label = "error" if response.status_code >= 500 else "ok"
+        RAG_REQUESTS_TOTAL.labels(status=status_label, endpoint=endpoint, method=method).inc()
+
+        return response
+    except Exception:
+        RAG_REQUESTS_TOTAL.labels(status="error", endpoint=endpoint, method=method).inc()
+        raise
+    finally:
+        RAG_REQUEST_DURATION_SECONDS.labels(endpoint=endpoint, method=method).observe(time.time() - start_time)
+
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, log_level=config.log_level)
+    uvicorn.run(app, host='127.0.0.1', log_level=config.log_level)
