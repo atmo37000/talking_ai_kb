@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["т"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "3.12.13"
@@ -27,6 +28,7 @@ pdfplumber = "^0.11.9"
 rank-bm25 = "^0.2.2"
 fastembed = "^0.8.0"
 prometheus-client = "^0.25.0"
+pydevd-pycharm = "^262.5752.27"
 
 
 [build-system]
