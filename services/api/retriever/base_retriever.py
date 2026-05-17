@@ -1,0 +1,16 @@
+from abc import ABC, abstractmethod
+
+from services.api.db_client.db_client import DbClient
+
+
+class BaseRetriever(ABC):
+    def __init__(self, db_client: DbClient):
+        pass
+
+    @abstractmethod
+    async def _apply_reranker(self):
+        pass
+
+    @abstractmethod
+    async def get(self, collection_name: str, query: str, limit: int):
+        pass
