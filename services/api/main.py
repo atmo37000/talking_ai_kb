@@ -1,9 +1,11 @@
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import uvicorn
 from fastapi import Body
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from qdrant_client.models import Distance
 from starlette.responses import Response
@@ -67,7 +69,10 @@ async def health():
 
 @app.get('/')
 async def root():
-    return {'message': 'Hello world'}
+    html_path = Path(__file__).parent / "static" / "index.html"
+    with open(html_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
 
 @app.get("/metrics")
 async def metrics():

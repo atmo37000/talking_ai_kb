@@ -12,11 +12,13 @@ AI-ассистент с возможностью работы с базой з�
 
 ## Особенности
 
+- Веб-интерфейс для отправки вопросов (доступен по адресу `/`)
 - Вопросы к базе знаний с использованием семантического поиска
 - Поддержка Markdown-документов
 - Интеграция с локальными языковыми моделями через Ollama
 - Векторное хранение и поиск документов в Qdrant
 - Логирование и обработка ошибок
+- Prometheus метрики для мониторинга
 
 ## Требования
 
@@ -39,10 +41,11 @@ cd talking-ai-kb
 
 ```bash
 # Установка зависимостей через Poetry
+cd services/api
 poetry install
 
 # Или установка через pip
-pip install -r reqs.txt
+pip install -r requirements.txt
 ```
 
 ### 3. Настройка переменных окружения
@@ -79,16 +82,19 @@ ollama pull llama3.1
 
 ### 1. Загрузка документов
 
-Перед использованием необходимо загрузить документы в базу знаний. Это можно сделать через скрипт или через API:
+Перед использованием необходимо загрузить документы в базу знаний. Это происходит автоматически при первом запуске сервера, если коллекция в Qdrant не существует.
+
+Для ручной загрузки документов:
 
 ```bash
-# Пример команды для загрузки документов
-python data_injector/markdown_data_injector.py
+cd services/api
+python -c "from services.api.data_injector.markdown_data_injector import MarkdownDataInjector; from services.api.chunker.recursive_chunker import RecursiveChunker; from services.api.utils.clients_fabric import ClientsFabric; import asyncio; clients = ClientsFabric().create_clients(); asyncio.run(MarkdownDataInjector(clients['db_client'], RecursiveChunker()).ingest_files())"
 ```
 
 ### 2. Запуск сервера
 
 ```bash
+cd services/api
 python main.py
 ```
 
@@ -96,7 +102,11 @@ python main.py
 
 ### 3. Взаимодействие с API
 
-#### Получение ответа на вопрос:
+#### Веб-интерфейс
+
+Откройте в браузере `http://localhost:8000` для доступа к веб-интерфейсу с формой отправки вопросов.
+
+#### Получение ответа на вопрос (через API):
 
 ```bash
 curl -X POST "http://localhost:8000/ask" \
@@ -112,41 +122,56 @@ curl http://localhost:8000/health
 
 ## API Endpoints
 
-- `POST /ask` - Получение ответа на вопрос
+- `GET /` - Веб-интерфейс с формой для отправки вопросов
+- `POST /ask` - Получение ответа на вопрос (принимает JSON: `{"question": "ваш вопрос"}`)
 - `GET /health` - Проверка состояния сервиса
-- `GET /` - Приветствие
+- `GET /metrics` - Prometheus метрики
 
 ## Структура проекта
 
 ```
 talking-ai-kb/
-├── main.py              # Основной файл приложения
-├── pyproject.toml       # Конфигурация проекта и зависимостей
-├── .env                 # Переменные окружения
-├── data_injector/       # Модули для загрузки данных
-│   ├── markdown_data_injector.py
-│   └── data_injector.py
-├── db_client/           # Клиенты для работы с базами данных
-│   ├── qdrant_client.py
-│   └── db_client.py
-├── handlers/            # Обработчики запросов
-│   ├── question_handler.py
-│   └── base_handler.py
-├── llm_client/          # Клиенты для работы с LLM
-│   ├── ollama_client.py
-│   └── base_llm_client.py
-├── prompt_builder/      # Конструкторы промптов
-│   ├── prompt_builder.py
-│   ├── prompts.py
-│   └── simple_prompt_builder.py
-├── retriever/           # Модули поиска контекста
-│   ├── simple_retriever.py
-│   └── retriever.py
-├── utils/               # Вспомогательные модули
-│   ├── config.py
-│   ├── clients_fabric.py
-│   └── logger.py
-└── tests/               # Тесты
+├── services/
+│   └── api/
+│       ├── main.py              # Основной файл приложения
+│       ├── pyproject.toml       # Конфигурация проекта и зависимостей
+│       ├── config.py            # Конфигурация
+│       ├── static/              # Статические файлы
+│       │   └── index.html       # Веб-интерфейс
+│       ├── data_injector/       # Модули для загрузки данных
+│       │   ├── markdown_data_injector.py
+│       │   └── data_injector.py
+│       ├── db_client/           # Клиенты для работы с базами данных
+│       │   ├── qdrant_client_wrapper.py
+│       │   └── db_client.py
+│       ├── handlers/            # Обработчики запросов
+│       │   ├── question_handler.py
+│       │   └── base_handler.py
+│       ├── llm_client/          # Клиенты для работы с LLM
+│       │   ├── ollama_client.py
+│       │   └── base_llm_client.py
+│       ├── prompt_builder/      # Конструкторы промптов
+│       │   ├── prompt_builder.py
+│       │   ├── prompts.py
+│       │   └── simple_prompt_builder.py
+│       ├── retriever/           # Модули поиска контекста
+│       │   ├── simple_retriever.py
+│       │   └── base_retriever.py
+│       ├── embedding_provider/  # Провайдеры эмбеддингов
+│       │   ├── fastembed_embeddings.py
+│       │   └── sentence_transformers_embeddings.py
+│       ├── chunker/             # Чанкеры для разделения документов
+│       │   ├── markdown_chunker.py
+│       │   ├── pdf_chunker.py
+│       │   └── recursive_chunker.py
+│       ├── utils/               # Вспомогательные модули
+│       │   ├── clients_fabric.py
+│       │   ├── logger.py
+│       │   └── middleware.py
+│       └── tests/               # Тесты
+├── docker-compose.yml           # Docker конфигурация
+├── docker-compose.dependencies.yml
+└── monitoring/                  # Мониторинг (Prometheus, Grafana)
 ```
 
 ## Тестирование
