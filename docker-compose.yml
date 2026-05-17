@@ -13,6 +13,8 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
+    networks:
+      - monitoring
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
@@ -32,6 +34,8 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
+    networks:
+      - monitoring
 
   prometheus:
     image: prom/prometheus:latest
@@ -54,7 +58,7 @@ services:
   talking-ai-kb:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/api/Dockerfile
     container_name: talking-ai-kb
     ports:
       - "8000:8000"
@@ -81,6 +85,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
     networks:
